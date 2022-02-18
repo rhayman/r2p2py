@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name=r2p2py,
+    name="r2p2py",
     version=0.1,
     author="robin hayman",
     author_email="robin.hayman@gmail.com",
