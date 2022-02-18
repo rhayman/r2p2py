@@ -106,10 +106,14 @@ class LogFileParser:
         unique_times.sort()
         first_time = unique_times[0]
         unique_times = [times - first_time for times in unique_times]
-        d = {'PosXY': pd.Series([(line.X, line.Z) for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
-            'AutoXY': pd.Series([(line.X, line.Z) for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
-            'ManualXY': pd.Series([(line.X, line.Z) for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
-            'DeliveredXY': pd.Series([(line.X, line.Z) for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
+        d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
+             'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
+            'AutoX': pd.Series([line.X for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
+            'AutoY': pd.Series([line.Z for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
+            'ManualX': pd.Series([line.X for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
+            'ManualY': pd.Series([line.Z for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
+            'DeliveredX': pd.Series([line.X for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards]),
+            'DeliveredY': pd.Series([line.Z for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
         }
         df = pd.DataFrame(d, index=unique_times)
         return df
