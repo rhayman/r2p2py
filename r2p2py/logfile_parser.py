@@ -1,13 +1,17 @@
 from dataclasses import dataclass, fields
-from collections import namedtuple
 from datetime import datetime
 import numpy as np
 
-ROTARY_ENCODER_UNITS_PER_TURN = 36800.0
+ROTARY_ENCODER_UNITS_PER_TURN = 8845.0
 format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
 
 # For reward-related information in the log file
-Reward = namedtuple("Reward", "ts, x, z")
+@dataclass
+class Reward:
+    ts: datetime
+    X: float
+    Z: float
+    reward_type: str = None
 
 @dataclass
 class LogFilePositionLine:
@@ -66,7 +70,12 @@ class LogFileParser:
             loglines.append(LogFilePositionLine(
                 dt, X, Z, theta, MX, MY,
                 GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark))
-        # 2) extract all the reward-related information
+        # now get the unique entries in the position data
+        # this is only possible due to the custom methods defined
+        # for the LogFilePositionLine class (__lt__, __eq__ & __hash__)
+        self.PosLines = list(set(loglines)) # unordered so...
+        self.PosLines.sort()
+        # 2) extract all the reward-related information - all unique timestamps
         log_reward_lines = [line for line in lines if 'Reward'in line]
         manual_rewards = []
         automatic_rewards = []
@@ -74,21 +83,25 @@ class LogFileParser:
         for line in log_reward_lines:
             if 'RewardPositioned' in line:
                 r = self.__get_reward__(line)
+                r.reward_type = 'Automatic'
                 manual_rewards.append(r)
             if 'Manual Reward_activated' in line:
                 r = self.__get_reward__(line)
+                r.reward_type = 'Manual'
                 automatic_rewards.append(r)
             if 'Reward_delivered' in line:
                 r = self.__get_reward__(line)
+                r.reward_type = 'Delivered'
                 delivered_rewards.append(r)
         self.ManualRewards = manual_rewards
         self.AutomaticRewards = automatic_rewards
         self.DeliveredRewards = delivered_rewards
-        # now get the unique entries in the position data
-        # this is only possible due to the custom methods defined
-        # for the LogFilePositionLine class (__lt__, __eq__ & __hash__)
-        self.PosLines = list(set(loglines)) # unordered so...
-        self.PosLines.sort()
+    def make_unique_timestamps(self):
+        pos_lines_set = set([line.date_time for line in self.PosLines])
+        auto_reward_set = set([line.dt for line in self.AutomaticRewards])
+        manual_reward_set = set([line.dt for line in self.ManualRewards])
+        delivered_reward_set = set([line.dt for line in self.DeliveredRewards])
+        unique_times = set.union(pos_lines_set, auto_reward_set, manual_reward_set, delivered_reward_set)
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
     def __get_int_val__(self, line: str) -> int:
