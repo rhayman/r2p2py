@@ -6,13 +6,22 @@ import pandas as pd
 ROTARY_ENCODER_UNITS_PER_TURN = 8845.0
 format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
 
-# For reward-related information in the log file
 @dataclass
 class Reward:
+    """Holds information about a reward event in a logfile"""
     date_time: datetime
     X: float
     Z: float
     reward_type: str = None
+
+    def __eq__(self, other):
+        if isinstance(other, Reward):
+            return self.X == other.X and self.Z == other.Z
+        return NotImplemented
+    def __key(self):
+        return (self.X, self.Z)
+    def __hash__(self):
+        return hash(self.__key())
 
 @dataclass
 class LogFilePositionLine:
@@ -78,45 +87,40 @@ class LogFileParser:
         self.PosLines.sort()
         # 2) extract all the reward-related information - all unique timestamps
         log_reward_lines = [line for line in lines if 'Reward'in line]
-        manual_rewards = []
-        automatic_rewards = []
+        rewards = []
         delivered_rewards= []
         for line in log_reward_lines:
             if 'RewardPositioned' in line:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Automatic'
-                manual_rewards.append(r)
+                rewards.append(r)
             if 'Manual Reward_activated' in line:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Manual'
-                automatic_rewards.append(r)
+                rewards.append(r)
             if 'Reward_delivered' in line:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Delivered'
                 delivered_rewards.append(r)
-        self.ManualRewards = manual_rewards
-        self.AutomaticRewards = automatic_rewards
+        self.Rewards = rewards
         self.DeliveredRewards = delivered_rewards
     def make_dataframe(self):
+        # Get the unique times for all events in the logfile
+        # be they position or reward occurences. These are used
+        # as the indices for the pandas DataFrame
         pos_lines_set = set([line.date_time for line in self.PosLines])
-        auto_reward_set = set([line.date_time for line in self.AutomaticRewards])
-        manual_reward_set = set([line.date_time for line in self.ManualRewards])
+        reward_set = set([line.date_time for line in self.Rewards])
         delivered_reward_set = set([line.date_time for line in self.DeliveredRewards])
-        unique_times = list(set.union(pos_lines_set, auto_reward_set, manual_reward_set, delivered_reward_set))
+        unique_times = list(set.union(pos_lines_set, reward_set, delivered_reward_set))
         unique_times.sort()
         first_time = unique_times[0]
         unique_times = [times - first_time for times in unique_times]
         d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
              'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
-            'AutoX': pd.Series([line.X for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
-            'AutoY': pd.Series([line.Z for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
-            'ManualX': pd.Series([line.X for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
-            'ManualY': pd.Series([line.Z for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
-            'DeliveredX': pd.Series([line.X for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards]),
-            'DeliveredY': pd.Series([line.Z for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
+            'Rewards': pd.Series([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards]),
+            'DeliveredRewards': pd.Series([line for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
         }
-        df = pd.DataFrame(d, index=unique_times)
-        return df
+        return pd.DataFrame(d, index=unique_times)
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
     def __get_int_val__(self, line: str) -> int:
@@ -139,8 +143,6 @@ class LogFileParser:
     def summarise(self):
         times = self.getPosTimes()
         print(f"Trial duration(s): {(times[-1]-times[0]).total_seconds()}")
-        total_rewards = len(self.AutomaticRewards) + len(self.ManualRewards)
+        total_rewards = len(self.Rewards)
         print(f"Total number of rewards: {total_rewards}")
-        print(f"\tManual rewards: {len(self.ManualRewards)}")
-        print(f"\tAutomatic rewards: {len(self.AutomaticRewards)}")
         print(f"Number of rewards delivered: {len(self.DeliveredRewards)}")
