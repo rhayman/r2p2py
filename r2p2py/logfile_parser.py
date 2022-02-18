@@ -1,6 +1,7 @@
 from dataclasses import dataclass, fields
 from datetime import datetime
 import numpy as np
+import pandas as pd
 
 ROTARY_ENCODER_UNITS_PER_TURN = 8845.0
 format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
@@ -8,7 +9,7 @@ format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
 # For reward-related information in the log file
 @dataclass
 class Reward:
-    ts: datetime
+    date_time: datetime
     X: float
     Z: float
     reward_type: str = None
@@ -96,12 +97,22 @@ class LogFileParser:
         self.ManualRewards = manual_rewards
         self.AutomaticRewards = automatic_rewards
         self.DeliveredRewards = delivered_rewards
-    def make_unique_timestamps(self):
+    def make_dataframe(self):
         pos_lines_set = set([line.date_time for line in self.PosLines])
-        auto_reward_set = set([line.dt for line in self.AutomaticRewards])
-        manual_reward_set = set([line.dt for line in self.ManualRewards])
-        delivered_reward_set = set([line.dt for line in self.DeliveredRewards])
-        unique_times = set.union(pos_lines_set, auto_reward_set, manual_reward_set, delivered_reward_set)
+        auto_reward_set = set([line.date_time for line in self.AutomaticRewards])
+        manual_reward_set = set([line.date_time for line in self.ManualRewards])
+        delivered_reward_set = set([line.date_time for line in self.DeliveredRewards])
+        unique_times = list(set.union(pos_lines_set, auto_reward_set, manual_reward_set, delivered_reward_set))
+        unique_times.sort()
+        first_time = unique_times[0]
+        unique_times = [times - first_time for times in unique_times]
+        d = {'PosXY': pd.Series([(line.X, line.Z) for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
+            'AutoXY': pd.Series([(line.X, line.Z) for line in self.AutomaticRewards], index=[line.date_time - first_time for line in self.AutomaticRewards]),
+            'ManualXY': pd.Series([(line.X, line.Z) for line in self.ManualRewards], index=[line.date_time - first_time for line in self.ManualRewards]),
+            'DeliveredXY': pd.Series([(line.X, line.Z) for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
+        }
+        df = pd.DataFrame(d, index=unique_times)
+        return df
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
     def __get_int_val__(self, line: str) -> int:
