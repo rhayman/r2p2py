@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="r2p2py",
-    version=0.21,
+    version=0.22,
     author="robin hayman",
     author_email="robin.hayman@gmail.com",
     description="Analysis of 2P data",
