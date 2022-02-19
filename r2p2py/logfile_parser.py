@@ -22,6 +22,10 @@ class Reward:
         return (self.X, self.Z)
     def __hash__(self):
         return hash(self.__key())
+    def __lt__(self, other):
+        if isinstance(other, Reward):
+            return self.date_time < other.date_time
+        return NotImplemented
 
 @dataclass
 class LogFilePositionLine:
