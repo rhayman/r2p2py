@@ -40,6 +40,8 @@ This will return a pandas dataframe (see Caveats below).
 Animation
 =========
 
+See point 3 in Caveats below first.
+
 There is a script called animate_trial.py that will also get installed, but it's probably easiest to just copy that and save it somewhere easier to access. Once you've done that you need to make the script executable (on Linux anyway) like so:
 
 ```console
@@ -71,3 +73,5 @@ Caveats
 1. theta is supposedly in degrees but the value for the rotary encoder units that make up one full revolution (called ROTARY_ENCODER_UNITS_PER_TURN in logfile_parser.py) is almost definitely wrong right now.
 
 2. pos_times in the above example is in the format of a datetime (from python module datetime). This makes time math easier but can take a bit of getting used to. In the call to getPosTimes() above the resulting datetimes are 'raw' in that they reflect the values in the actual logfile. In contrast, for animating the results, I've used pandas (https://pandas.pydata.org/docs/index.html) to organise the data, and here the time data is zeroed so that the first time stamp is 0.
+
+3. The animation stuff will require that ffmpeg is installed.
