@@ -59,7 +59,7 @@ ax.axis('off')
 line1, = ax.plot(x, z, '-', lw=1, color=[0.8627, 0.8627, 0.8627])
 line, = ax.plot([], [], '-', lw=3, color='orange')
 mouse_head = Ellipse([],0.35,0.35,[])
-# reward_blobs, = ax.plot([], [], 'bo', ms=6)
+reward_blobs, = ax.plot([], [], 'bo', ms=6)
 time_text = ax.text(0.78, 0.04, '', transform=ax.transAxes)
 
 # initialise the animation
@@ -73,7 +73,7 @@ def init():
     mouse_head.center = mouse_head_pos[0:2]
     mouse_head.angle = mouse_head_pos[-1]
     ax.add_patch(mouse_head)
-    # reward_blobs.set_data([], [])
+    reward_blobs.set_data([], [])
     time_text.set_text('')
     return line, mouse_head, time_text
 
@@ -85,9 +85,12 @@ def animate(i):
     mouse_head_pos = log_animator.mousehead()
     mouse_head.center = mouse_head_pos[0:2]
     mouse_head.angle = mouse_head_pos[-1]
-    xy = log_animator.reward_locations()
-    print(len(xy))
-    # reward_blobs.set_data(*log_animator.reward_locations())
+    reward_locations = np.array(log_animator.reward_locations())
+    if reward_locations.size > 0:
+        reward_blobs.set_data(reward_locations[:,0], reward_locations[:,1])
+        reward_blobs.set_markersize(12)
+    # else:
+    #     reward_blobs.set_data([], [])
     time_text.set_text(f'Time(s): {log_animator.time_elapsed.seconds}')
     return line, mouse_head, time_text
 

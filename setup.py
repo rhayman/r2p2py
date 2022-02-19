@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="r2p2py",
-    version=0.26,
+    version=0.27,
     author="robin hayman",
     author_email="robin.hayman@gmail.com",
     description="Analysis of 2P data",
@@ -17,7 +17,8 @@ setuptools.setup(
     package_data={"": ["*.txt"]},
     install_requires=[
         "numpy",
-        "matplotlib"],
+        "matplotlib",
+        "pandas"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
