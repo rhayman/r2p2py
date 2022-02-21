@@ -70,17 +70,8 @@ class LogFileParser:
             items = line.split()
             date_time = items[0] + " " + items[1]
             dt = datetime.strptime(date_time, format_string)
-            X = self.__get_float_val__(items[2])
-            Z = self.__get_float_val__(items[3])
-            theta = np.rad2deg(self.__get_float_val__(items[4]) / ROTARY_ENCODER_UNITS_PER_TURN)
-            MX = self.__get_float_val__(items[6])
-            MY = self.__get_float_val__(items[7])
-            GainX = self.__get_float_val__(items[8])
-            GainY = self.__get_float_val__(items[9])
-            Fading = self.__get_float_val__(items[10])
-            RealTimeGainX = self.__get_int_val__(items[11])
-            RealTimeGainY = self.__get_int_val__(items[12])
-            Dark = self.__get_int_val__(items[13])
+            X, Z, theta, MX, MY, GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark = self.__parse_line(line)
+            theta = np.rad2deg(theta / ROTARY_ENCODER_UNITS_PER_TURN)
             loglines.append(LogFilePositionLine(
                 dt, X, Z, theta, MX, MY,
                 GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark))
@@ -108,6 +99,15 @@ class LogFileParser:
                 delivered_rewards.append(r)
         self.Rewards = rewards
         self.DeliveredRewards = delivered_rewards
+    def __parse_line(self, line: str):
+        items_to_parse = ["X", "Z", "Rot", "MX", "MY", "GainX", "GainY", "Fading", "RealTimeGainX", "RealTimeGainY", "Dark"]
+        values_to_return = dict.fromkeys(items_to_parse, 0.0)
+        for item in line.split():
+            key = item.split('=')
+            if key[0] in items_to_parse:
+                values_to_return[key[0]] = float(key[-1])
+        return values_to_return
+
     def make_dataframe(self):
         # Get the unique times for all events in the logfile
         # be they position or reward occurences. These are used
