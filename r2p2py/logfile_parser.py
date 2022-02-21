@@ -2,6 +2,7 @@ from dataclasses import dataclass, fields
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import re
 
 ROTARY_ENCODER_UNITS_PER_TURN = 8845.0
 format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
@@ -85,7 +86,7 @@ class LogFileParser:
         rewards = []
         delivered_rewards= []
         for line in log_reward_lines:
-            if 'RewardPositioned' in line:
+            if re.search('Reward[0-9]Positioned',line):
                 r = self.__get_reward__(line)
                 r.reward_type = 'Automatic'
                 rewards.append(r)
