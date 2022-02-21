@@ -80,7 +80,7 @@ class LogFileParser:
             Fading = self.__get_float_val__(items[10])
             RealTimeGainX = self.__get_int_val__(items[11])
             RealTimeGainY = self.__get_int_val__(items[12])
-            Dark = RealTimeGainX = self.__get_int_val__(items[13])
+            Dark = self.__get_int_val__(items[13])
             loglines.append(LogFilePositionLine(
                 dt, X, Z, theta, MX, MY,
                 GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark))
