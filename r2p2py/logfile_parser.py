@@ -106,7 +106,7 @@ class LogFileParser:
             key = item.split('=')
             if key[0] in items_to_parse:
                 values_to_return[key[0]] = float(key[-1])
-        return values_to_return
+        return values_to_return.values()
 
     def make_dataframe(self):
         # Get the unique times for all events in the logfile
