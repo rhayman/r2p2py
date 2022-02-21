@@ -77,7 +77,7 @@ class LogFileParser:
             MY = self.__get_float_val__(items[7])
             GainX = self.__get_float_val__(items[8])
             GainY = self.__get_float_val__(items[9])
-            Fading = self.__get_int_val__(items[10])
+            Fading = self.__get_float_val__(items[10])
             RealTimeGainX = self.__get_int_val__(items[11])
             RealTimeGainY = self.__get_int_val__(items[12])
             Dark = RealTimeGainX = self.__get_int_val__(items[13])
