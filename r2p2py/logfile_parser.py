@@ -70,8 +70,8 @@ class LogFileParser:
             items = line.split()
             date_time = items[0] + " " + items[1]
             dt = datetime.strptime(date_time, format_string)
-            X, Z, theta, MX, MY, GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark = self.__parse_line(line)
-            theta = np.rad2deg(theta / ROTARY_ENCODER_UNITS_PER_TURN)
+            X, Z, Rot, MX, MY, GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark = self.__parse_line(line)
+            theta = np.rad2deg(Rot / ROTARY_ENCODER_UNITS_PER_TURN)
             loglines.append(LogFilePositionLine(
                 dt, X, Z, theta, MX, MY,
                 GainX, GainY, Fading, RealTimeGainX, RealTimeGainY, Dark))
