@@ -127,10 +127,8 @@ class LogFileParser:
         pos_d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
              'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines])
         }
-        reward_d = {'Rewards': pd.Series([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards])
-        }
         pos_d = pd.DataFrame(pos_d)
-        reward_d = pd.DataFrame(reward_d)
+        reward_d = pd.DataFrame([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards])
         d = pos_d.append(reward_d)
         return d.sort_index()
     def __get_float_val__(self, line: str) -> float:
@@ -160,27 +158,9 @@ class LogFileParser:
 
 def analyse_rewards(logfile: LogFileParser):
     df = logfile.make_dataframe()
-    rewards_idx = ~df['Rewards'].isna()
-    delivered_rewards_idx = ~df['DeliveredRewards'].isna()
-    rewards_df = df[rewards_idx]
-    delivered_rewards_df = df[delivered_rewards_idx]
-    rewards = rewards_df.Rewards
-    delivered_rewards = delivered_rewards_df.DeliveredRewards
-
-    time_between_rewards = []
-    dropped_reward_time_index = []
-    delivered_reward_time_index = []
-    for this_delivered_reward in list(delivered_rewards):
-        if this_delivered_reward in list(rewards):
-            dropped_reward_idx = rewards == this_delivered_reward
-            dropped_reward_df = rewards[dropped_reward_idx]
-            dropped_reward_time_index.append(dropped_reward_df.index)
-
-            delivered_reward_idx = delivered_rewards == this_delivered_reward
-            delivered_reward_df = delivered_rewards[delivered_reward_idx]
-            delivered_reward_time_index.append(delivered_reward_df.index)
-
-            reward_time_index.append(dr.index)
-            time_between_rewards.append((this_delivered_reward.date_time - dr.iloc[-1].date_time).total_seconds())
+    not_nans = ~df.isna()
+    not_delivered = df['reward_type'] != 'Delivered'
+    idx = np.logical_and(not_nans, not_delivered)
+    all_rewards = df[idx]
 
     
