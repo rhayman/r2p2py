@@ -102,9 +102,8 @@ class LogFileParser:
             if 'Reward_delivered' in line:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Delivered'
-                delivered_rewards.append(r)
+                rewards.append(r)
         self.Rewards = rewards
-        self.DeliveredRewards = delivered_rewards
     def __parse_line(self, line: str):
         items_to_parse = ["X", "Z", "Rot", "MX", "MY", "GainX", "GainY", "Fading", "RealTimeGainX", "RealTimeGainY", "Dark"]
         values_to_return = dict.fromkeys(items_to_parse, 0.0)
@@ -126,12 +125,15 @@ class LogFileParser:
         first_time = unique_times[0]
         self.first_time = first_time
         unique_times = [times - first_time for times in unique_times]
-        d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
-             'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
-            'Rewards': pd.Series([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards]),
-            'DeliveredRewards': pd.Series([line for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
+        pos_d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
+             'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines])
         }
-        return pd.DataFrame(d)
+        reward_d = {'Rewards': pd.Series([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards])
+        }
+        pos_d = pd.DataFrame(pos_d)
+        reward_d = pd.DataFrame(reward_d)
+        d = pos_d.append(reward_d)
+        return d.sort_index()
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
     def __get_int_val__(self, line: str) -> int:
@@ -156,7 +158,6 @@ class LogFileParser:
         print(f"Trial duration(s): {(times[-1]-times[0]).total_seconds()}")
         total_rewards = len(self.Rewards)
         print(f"Total number of rewards: {total_rewards}")
-        print(f"Number of rewards delivered: {len(self.DeliveredRewards)}")
 
 def analyse_rewards(logfile: LogFileParser):
     df = logfile.make_dataframe()
@@ -168,13 +169,18 @@ def analyse_rewards(logfile: LogFileParser):
     delivered_rewards = delivered_rewards_df.DeliveredRewards
 
     time_between_rewards = []
-    reward_time_index = []
+    dropped_reward_time_index = []
     delivered_reward_time_index = []
     for this_delivered_reward in list(delivered_rewards):
         if this_delivered_reward in list(rewards):
-            delivered_reward_time_index.append(this_delivered_reward.date_time - logfile.first_time)
-            idx = rewards == this_delivered_reward
-            dr = rewards[idx]
+            dropped_reward_idx = rewards == this_delivered_reward
+            dropped_reward_df = rewards[dropped_reward_idx]
+            dropped_reward_time_index.append(dropped_reward_df.index)
+
+            delivered_reward_idx = delivered_rewards == this_delivered_reward
+            delivered_reward_df = delivered_rewards[delivered_reward_idx]
+            delivered_reward_time_index.append(delivered_reward_df.index)
+
             reward_time_index.append(dr.index)
             time_between_rewards.append((this_delivered_reward.date_time - dr.iloc[-1].date_time).total_seconds())
 
