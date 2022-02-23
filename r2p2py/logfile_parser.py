@@ -90,6 +90,10 @@ class LogFileParser:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Automatic'
                 rewards.append(r)
+            if re.search('RewardPositioned',line):
+                r = self.__get_reward__(line)
+                r.reward_type = 'Automatic'
+                rewards.append(r)
             if 'Manual Reward_activated' in line:
                 r = self.__get_reward__(line)
                 r.reward_type = 'Manual'
@@ -125,7 +129,7 @@ class LogFileParser:
             'Rewards': pd.Series([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards]),
             'DeliveredRewards': pd.Series([line for line in self.DeliveredRewards], index=[line.date_time - first_time for line in self.DeliveredRewards])
         }
-        return pd.DataFrame(d, index=unique_times)
+        return pd.DataFrame(d)
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
     def __get_int_val__(self, line: str) -> int:
