@@ -119,8 +119,7 @@ class LogFileParser:
         # as the indices for the pandas DataFrame
         pos_lines_set = set([line.date_time for line in self.PosLines])
         reward_set = set([line.date_time for line in self.Rewards])
-        delivered_reward_set = set([line.date_time for line in self.DeliveredRewards])
-        unique_times = list(set.union(pos_lines_set, reward_set, delivered_reward_set))
+        unique_times = list(set.union(pos_lines_set, reward_set))
         unique_times.sort()
         first_time = unique_times[0]
         self.first_time = first_time
