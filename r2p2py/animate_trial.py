@@ -31,12 +31,12 @@ class LogFileAnimator:
         if np.any(found_rewards):
             sub_df = df[found_rewards]
             for _, row in sub_df.iterrows():
-                self.current_rewards[(row.Rewards.X, row.Rewards.Z)] = row.Rewards
+                self.current_rewards[(row.Rewards.rX, row.Rewards.rZ)] = row.Rewards
         found_rewards = ~pd.isna(df.DeliveredRewards)
         if np.any(found_rewards):
             sub_df = df[found_rewards]
             for _, row in sub_df.iterrows():
-                delievered = (row.DeliveredRewards.X, row.DeliveredRewards.Z)
+                delievered = (row.DeliveredRewards.rX, row.DeliveredRewards.rZ)
                 if delievered in self.current_rewards:
                     self.current_rewards.pop(delievered)
         return list(self.current_rewards.keys())

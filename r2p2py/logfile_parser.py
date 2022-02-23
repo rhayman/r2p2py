@@ -11,16 +11,16 @@ format_string = "%Y-%m-%d %H:%M:%S.%f" # for parsing the time strings
 class Reward:
     """Holds information about a reward event in a logfile"""
     date_time: datetime
-    X: float
-    Z: float
+    rX: float # called rX due to indexing duplication in pandas with LogFilePositionLine X etc
+    rZ: float
     reward_type: str = None
 
     def __eq__(self, other):
         if isinstance(other, Reward):
-            return self.X == other.X and self.Z == other.Z
+            return self.rX == other.rX and self.rZ == other.rZ
         return NotImplemented
     def __key(self):
-        return (self.X, self.Z)
+        return (self.rX, self.rZ)
     def __hash__(self):
         return hash(self.__key())
     def __lt__(self, other):
