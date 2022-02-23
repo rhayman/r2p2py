@@ -131,10 +131,13 @@ class LogFileParser:
         reward_d = pd.DataFrame([line for line in self.Rewards], index=[line.date_time - first_time for line in self.Rewards])
         d = pos_d.append(reward_d)
         return d.sort_index()
+    
     def __get_float_val__(self, line: str) -> float:
         return float(line.split("=")[-1])
+    
     def __get_int_val__(self, line: str) -> int:
         return int(line.split("=")[-1])
+    
     def __get_reward__(self, line: str) -> Reward:
         items = line.split()
         date_time = items[0] + " " + items[1]
@@ -142,25 +145,40 @@ class LogFileParser:
         X = self.__get_float_val__(items[-2])
         Z = self.__get_float_val__(items[-1])
         return Reward(dt, X, Z)
+    
     def getX(self) -> list:
         return [line.X for line in self.PosLines]
+    
     def getZ(self) -> list:
         return [line.Z for line in self.PosLines]
+    
     def getTheta(self) -> list:
         return [line.Theta for line in self.PosLines]
+    
     def getPosTimes(self) -> list:
         return [line.date_time for line in self.PosLines]
-    def summarise(self):
+
+    def analyse_rewards(self):
+        df = self.make_dataframe()
+        not_nans = ~df['reward_type'].isna()
+        delivered = df['reward_type'] == 'Delivered'
+        dropped_rewards = df[np.logical_and(not_nans, ~delivered)]
+        delivered_rewards = df[np.logical_and(not_nans, delivered)]
         times = self.getPosTimes()
         print(f"Trial duration(s): {(times[-1]-times[0]).total_seconds()}")
-        total_rewards = len(self.Rewards)
-        print(f"Total number of rewards: {total_rewards}")
 
-def analyse_rewards(logfile: LogFileParser):
-    df = logfile.make_dataframe()
-    not_nans = ~df.isna()
-    not_delivered = df['reward_type'] != 'Delivered'
-    idx = np.logical_and(not_nans, not_delivered)
-    all_rewards = df[idx]
-
-    
+        delivered_times = []
+        dropped_times = []
+        for index, row in dropped_rewards.iterrows():
+            rx = row.rX
+            rz = row.rZ
+            dropped_time = index
+            delivered_index = np.logical_and(delivered_rewards['rX']==rx, delivered_rewards['rZ']==rz)
+            delivered = delivered_rewards[delivered_index]
+            delivered_time = delivered.index
+            if not delivered_time.empty:
+                delivered_times.append(delivered_time)
+                dropped_times.append(dropped_time)
+        
+        print(f"Total dropped rewards = {len(dropped_times)}")
+        print(f"Total delivered rewards = {len(delivered_times)}")

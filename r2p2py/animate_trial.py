@@ -2,9 +2,10 @@ import matplotlib.pylab as plt
 from matplotlib.patches import Ellipse
 import matplotlib.animation as animation
 import numpy as np
+from numpy import polysub
 import pandas as pd
 import argparse
-from r2p2py.logfile_parser import LogFileParser
+from r2p2py.logfile_parser import LogFileParser, Reward
 
 class LogFileAnimator:
     def __init__(self, fname: str, start_in_seconds: int = 200) -> None:
@@ -19,7 +20,10 @@ class LogFileAnimator:
     def position(self) -> list:
         """Return a list of X,Y positions to plot"""
         df = self.df[self.time_elapsed:self.time_elapsed+self.plot_window]
-        return (df.PosX, df.PosY)
+        x = df.PosX
+        y = df.PosY
+        idx = np.logical_or(np.isnan(x), np.isnan(y))
+        return (x[~idx], y[~idx])
     def mousehead(self) -> tuple:
         """Return a tuple of X,Y positions to plot the mouses noggin"""
         df = self.df[self.time_elapsed:self.time_elapsed+self.plot_window]
@@ -27,18 +31,21 @@ class LogFileAnimator:
     def reward_locations(self):
         """Return a tuple of X,Y positions to plot the reward locations"""
         df = self.df[self.time_elapsed:self.time_elapsed+self.plot_window]
-        found_rewards = ~pd.isna(df.Rewards)
+        found_rewards = ~pd.isna(df.reward_type)
         if np.any(found_rewards):
             sub_df = df[found_rewards]
             for _, row in sub_df.iterrows():
-                self.current_rewards[(row.Rewards.rX, row.Rewards.rZ)] = row.Rewards
-        found_rewards = ~pd.isna(df.DeliveredRewards)
+                this_reward = (row.rX, row.rZ)
+                if 'Delivered' not in row.reward_type:
+                    self.current_rewards[this_reward] = row.reward_type
         if np.any(found_rewards):
             sub_df = df[found_rewards]
             for _, row in sub_df.iterrows():
-                delievered = (row.DeliveredRewards.rX, row.DeliveredRewards.rZ)
-                if delievered in self.current_rewards:
-                    self.current_rewards.pop(delievered)
+                this_reward = (row.rX, row.rZ)
+                if 'Delivered' in row.reward_type:
+                    if this_reward in self.current_rewards:
+                        self.current_rewards.pop(this_reward)
+        
         return list(self.current_rewards.keys())
     def step(self, dt):
         self.time_elapsed += pd.Timedelta(dt*5,'seconds')
@@ -100,10 +107,11 @@ def run_animation(fname: str, start_time: int = 0, duration: int = 100, save: bo
                                 interval=interval, blit=True, init_func=init)
 
     if save:
+        # FFwriter = animation.FFMpegWriter(fps=30)
         from pathlib import Path
         savename = Path(fname)
         savename = savename.with_suffix(".mp4")
-        ani.save(savename, fps=30, dpi=300, extra_args=['-vcodec', 'libx264'])
+        ani.save(savename, fps=30, dpi=300, extra_args=['-vcodec', 'libx264']) 
         plt.close()
         return
 
