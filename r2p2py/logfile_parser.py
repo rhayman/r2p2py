@@ -62,6 +62,7 @@ class LogFilePositionLine:
 
 class LogFileParser:
     def __init__(self, log_file_name: str):
+        self.first_time = None # important
         with open(log_file_name, 'r') as logfile:
             lines = logfile.readlines()
         # 1) deal with all the lines containing the position of the mouse
@@ -123,6 +124,7 @@ class LogFileParser:
         unique_times = list(set.union(pos_lines_set, reward_set, delivered_reward_set))
         unique_times.sort()
         first_time = unique_times[0]
+        self.first_time = first_time
         unique_times = [times - first_time for times in unique_times]
         d = {'PosX': pd.Series([line.X for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
              'PosY': pd.Series([line.Z for line in self.PosLines], index=[line.date_time - first_time for line in self.PosLines]),
@@ -155,3 +157,25 @@ class LogFileParser:
         total_rewards = len(self.Rewards)
         print(f"Total number of rewards: {total_rewards}")
         print(f"Number of rewards delivered: {len(self.DeliveredRewards)}")
+
+def analyse_rewards(logfile: LogFileParser):
+    df = logfile.make_dataframe()
+    rewards_idx = ~df['Rewards'].isna()
+    delivered_rewards_idx = ~df['DeliveredRewards'].isna()
+    rewards_df = df[rewards_idx]
+    delivered_rewards_df = df[delivered_rewards_idx]
+    rewards = rewards_df.Rewards
+    delivered_rewards = delivered_rewards_df.DeliveredRewards
+
+    time_between_rewards = []
+    reward_time_index = []
+    delivered_reward_time_index = []
+    for this_delivered_reward in list(delivered_rewards):
+        if this_delivered_reward in list(rewards):
+            delivered_reward_time_index.append(this_delivered_reward.date_time - logfile.first_time)
+            idx = rewards == this_delivered_reward
+            dr = rewards[idx]
+            reward_time_index.append(dr.index)
+            time_between_rewards.append((this_delivered_reward.date_time - dr.iloc[-1].date_time).total_seconds())
+
+    
