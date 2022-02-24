@@ -180,7 +180,7 @@ class LogFileParser:
             if not delivered_time.empty:
                 delivered_times.append(delivered_time[0])
                 dropped_times.append(dropped_time)
-                time_taken_to_deliver.append((dropped_time-delivered_time[0]).total_seconds())
+                time_taken_to_deliver.append((delivered_time[0]-dropped_time).total_seconds())
         
         print(f"Total dropped rewards = {len(dropped_times)}")
         print(f"Total delivered rewards = {len(delivered_times)}")
