@@ -85,7 +85,6 @@ class LogFileParser:
         # 2) extract all the reward-related information - all unique timestamps
         log_reward_lines = [line for line in lines if 'Reward'in line]
         rewards = []
-        delivered_rewards= []
         for line in log_reward_lines:
             if re.search('Reward[0-9]Positioned',line):
                 r = self.__get_reward__(line)
@@ -169,6 +168,7 @@ class LogFileParser:
 
         delivered_times = []
         dropped_times = []
+        time_taken_to_deliver = []
         for index, row in dropped_rewards.iterrows():
             rx = row.rX
             rz = row.rZ
@@ -177,8 +177,35 @@ class LogFileParser:
             delivered = delivered_rewards[delivered_index]
             delivered_time = delivered.index
             if not delivered_time.empty:
-                delivered_times.append(delivered_time)
+                delivered_times.append(delivered_time[0])
                 dropped_times.append(dropped_time)
+                time_taken_to_deliver.append((dropped_time-delivered_time[0]).total_seconds())
         
         print(f"Total dropped rewards = {len(dropped_times)}")
         print(f"Total delivered rewards = {len(delivered_times)}")
+
+        # iterate through the list of dropped and delivered times pulling out the x and y 
+        # segments
+        x = self.getX()
+        y = self.getZ()
+        xmin = np.abs(np.min(x))
+        ymin = np.abs(np.min(y))
+        tortuosity = []
+        for dropped, delivered in zip(dropped_times, delivered_times):
+            start = df.index.searchsorted(dropped) # returns integer index into df
+            end = df.index.searchsorted(delivered)
+            sub_df = df[start:end]
+            x = np.array(sub_df.PosX)
+            y = np.array(sub_df.PosY)
+            if np.any(~np.isnan(x)):
+                nans = np.logical_or(np.isnan(x), np.isnan(y))
+                x = x[~nans]
+                y = y[~nans]
+                x = x+xmin
+                y = y+ymin
+                L = np.hypot(np.abs(x[-1]-x[0]), np.abs(y[-1]-y[0]))
+                C = np.cumsum(np.abs(np.diff(np.hypot(x,y))))[-1]
+                T = C/L
+                tortuosity.append(T)
+
+        return time_taken_to_deliver, tortuosity
