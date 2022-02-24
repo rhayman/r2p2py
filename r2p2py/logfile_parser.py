@@ -164,7 +164,8 @@ class LogFileParser:
         dropped_rewards = df[np.logical_and(not_nans, ~delivered)]
         delivered_rewards = df[np.logical_and(not_nans, delivered)]
         times = self.getPosTimes()
-        print(f"Trial duration(s): {(times[-1]-times[0]).total_seconds()}")
+        trial_duration = (times[-1]-times[0]).total_seconds()
+        print(f"Trial duration(s): {trial_duration}")
 
         delivered_times = []
         dropped_times = []
@@ -201,11 +202,12 @@ class LogFileParser:
                 nans = np.logical_or(np.isnan(x), np.isnan(y))
                 x = x[~nans]
                 y = y[~nans]
-                x = x+xmin
-                y = y+ymin
-                L = np.hypot(np.abs(x[-1]-x[0]), np.abs(y[-1]-y[0]))
-                C = np.cumsum(np.abs(np.diff(np.hypot(x,y))))[-1]
-                T = C/L
-                tortuosity.append(T)
+                if len(x) > 2:
+                    x = x+xmin
+                    y = y+ymin
+                    L = np.hypot(np.abs(x[-1]-x[0]), np.abs(y[-1]-y[0]))
+                    C = np.cumsum(np.abs(np.diff(np.hypot(x,y))))[-1]
+                    T = C/L
+                    tortuosity.append(T)
 
-        return time_taken_to_deliver, tortuosity
+        return time_taken_to_deliver, tortuosity, trial_duration
