@@ -170,17 +170,17 @@ class LogFileParser:
         delivered_times = []
         dropped_times = []
         time_taken_to_deliver = []
-        for index, row in dropped_rewards.iterrows():
+        for index, row in delivered_rewards.iterrows():
             rx = row.rX
             rz = row.rZ
-            dropped_time = index
-            delivered_index = np.logical_and(delivered_rewards['rX']==rx, delivered_rewards['rZ']==rz)
-            delivered = delivered_rewards[delivered_index]
-            delivered_time = delivered.index
-            if not delivered_time.empty:
-                delivered_times.append(delivered_time[0])
+            delivered_time = index
+            dropped_index = np.logical_and(dropped_rewards['rX']==rx, dropped_rewards['rZ']==rz)
+            dropped = dropped_rewards[dropped_index]
+            if len(dropped) > 0:
+                dropped_time = dropped.index[0]
                 dropped_times.append(dropped_time)
-                time_taken_to_deliver.append((delivered_time[0]-dropped_time).total_seconds())
+                delivered_times.append(delivered_time)
+                time_taken_to_deliver.append((delivered_time-dropped_time).total_seconds())
         
         print(f"Total dropped rewards = {len(dropped_times)}")
         print(f"Total delivered rewards = {len(delivered_times)}")
